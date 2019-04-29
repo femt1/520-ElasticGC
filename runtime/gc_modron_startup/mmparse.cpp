@@ -36,7 +36,6 @@
 #include "modronnls.h"
 #include "gcutils.h"
 #include "ModronAssertions.h"
-
 #include "mmparse.h"
 
 #include "Configuration.hpp"
@@ -73,7 +72,7 @@
 #define OPT_NUMA_NONE "-Xnuma:none"
 #define OPT_XXMAXRAMPERCENT "-XX:MaxRAMPercentage="
 #define OPT_XXINITIALRAMPERCENT "-XX:InitialRAMPercentage="
-
+#define OPT_XGC_ELASTIC_COLON "-Xgcelastic:"
 /**
  * @}
  */
@@ -852,8 +851,15 @@ gcParseSovereignArguments(J9JavaVM *vm)
 
 	if (-1 != option_set_pair(vm, "-Xenableexplicitgc", "-Xdisableexplicitgc", &index)) {
 		extensions->disableExplicitGC = (index != 0);
+
 	}
 
+
+//elastic GC
+	if((-1 != option_set(vm, "-Xgcelastic:", EXACT_MATCH)) ||( -1 != option_set(vm, "-Xgcelastic", EXACT_MATCH)))
+	{
+		extensions->elasticGC.elasticEnabled = 1;
+	}
 #if defined(J9VM_GC_MODRON_COMPACTION)
 	/* These arguments aren't done as mutual exclusive pairs because their effects are not opposites */
 	if (-1 != option_set(vm, "-Xnocompactexplicitgc", EXACT_MATCH)) {
@@ -1428,6 +1434,7 @@ gcParseCommandLineAndInitializeWithValues(J9JavaVM *vm, IDATA *memoryParameters)
 	char *xxGCOptions = NULL;
 	IDATA xGCColonIndex = 0;
 	IDATA xxGCColonIndex = 0;
+	IDATA xEGCColonIndex = 0;
 	J9VMInitArgs *vmArgs = vm->vmArgsArray;
 
 	PORT_ACCESS_FROM_JAVAVM(vm);
@@ -1668,6 +1675,41 @@ gcParseCommandLineAndInitializeWithValues(J9JavaVM *vm, IDATA *memoryParameters)
 		}
 		xxGCColonIndex = FIND_NEXT_ARG_IN_VMARGS_FORWARD( STARTSWITH_MATCH, OPT_XXGC_COLON, NULL, xxGCColonIndex);
 	}		
+
+
+	xEGCColonIndex = FIND_ARG_IN_VMARGS_FORWARD(STARTSWITH_MATCH, OPT_XGC_ELASTIC_COLON, NULL);
+	//	extensions->gcThreadCount = 3;
+	if(xEGCColonIndex >= 0 )
+	{
+		extensions->elasticGC.elasticEnabled = 1;
+
+	
+
+		//PORT_ACCESS_FROM_JAVAVM(vm);
+	
+		//TRIGGER_J9HOOK_MM_PRIVATE_INVOKE_GC_CHECK(extensions->hookInterface,vm, PORTLIB, "all:all:verbose", 0);
+	}
+	while(xEGCColonIndex >= 0)
+	{
+
+		
+		CONSUME_ARG(vmArgs, xEGCColonIndex);
+		GET_OPTION_VALUE(xEGCColonIndex, ':', &xGCOptions);
+
+		if(xGCOptions != NULL)
+		{
+			jint retCode;
+			if(JNI_OK != (retCode = gcParseXgcArguments(vm, xGCOptions)))
+			{
+				return retCode;
+			}
+		}	else
+			{
+				return JNI_OK;
+			}
+		
+		xEGCColonIndex = FIND_NEXT_ARG_IN_VMARGS_FORWARD(STARTSWITH_MATCH, OPT_XGC_ELASTIC_COLON, NULL, xEGCColonIndex);
+	}
 
 	xGCColonIndex = FIND_ARG_IN_VMARGS_FORWARD( STARTSWITH_MATCH, OPT_XGC_COLON, NULL );
 	while (xGCColonIndex >= 0) {
