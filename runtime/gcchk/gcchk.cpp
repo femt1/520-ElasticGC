@@ -239,12 +239,37 @@ excludeLocalGc(J9JavaVM *javaVM)
 	if (cycle->getMiscFlags() & J9MODRON_GCCHK_LOCAL_INTERVAL) {
 		if ((extensions->localGcCount % extensions->localGcInterval) == 0) {
 			return false;
-		} else {
+		}
+		else{
 			ret = true;
 		}
 	}
 
 	if (cycle->getMiscFlags() & J9MODRON_GCCHK_INTERVAL) {
+		
+		/*
+		* Elastic GC logic
+		*/
+		if(gcExtensions->elasticGC.elasticEnabled == 1 && gcExtensions->elasticGC.controlFlow == 2)
+		{
+			//get gc Utilisation
+				
+		if(gcExtensions->elasticGC.gcUtilCurr > gcExtensions->elasticGC.gcUtilRangeMax)
+			{
+				extensions->gcInterval = extensions->gcInterval + 100;
+				gcExtensions->elasticGC.gcInterval = extensions->gcInterval;	
+			if((extensions->globalGcCount + extensions ->localGcCount) % extensions->gcInterval > 3)
+				{
+				return true;
+				}
+			}
+		else if(gcExtensions->elasticGC.gcUtilCurr < gcExtensions->elasticGC.gcUtilRangeMin)
+		{
+			extensions->gcInterval = extensions->gcInterval - 100;
+			gcExtensions->elasticGC.gcInterval = extensions->gcInterval;
+		}
+		}
+
 		return  ( ((extensions->globalGcCount + extensions->localGcCount) % extensions->gcInterval) != 0 );
 	}
 
@@ -320,7 +345,7 @@ excludeGlobalGc(J9VMThread* vmThread)
 	if (cycle->getMiscFlags() & J9MODRON_GCCHK_GLOBAL_INTERVAL) {
 		if ( (extensions->globalGcCount % extensions->globalGcInterval) == 0 ) {
 			return false;
-		} else {
+		}else {
 			ret = true;
 		}
 	}
