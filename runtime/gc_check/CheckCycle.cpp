@@ -169,13 +169,17 @@ GC_CheckCycle::generateCheckList(UDATA scanFlags)
 bool
 GC_CheckCycle::initialize(const char *options)
 {
-	GCCHK_Extensions *extensions = (GCCHK_Extensions *)((MM_GCExtensions*)_javaVM->gcExtensions)->gcchkExtensions;
+	MM_GCExtensions * gcExt = (MM_GCExtensions *) _javaVM->gcExtensions;
+	GCCHK_Extensions *extensions = (GCCHK_Extensions *) gcExt->gcchkExtensions;
+	//GCCHK_Extensions *extensions = (GCCHK_Extensions *)((MM_GCExtensions*)_javaVM->gcExtensions)->gcchkExtensions;
 	UDATA scanFlags = 0, checkFlags = 0, miscFlags;
 	char *scan_start = (char *)options;
 	const char *scan_limit = options + strlen(options);
 
 	/* set the default miscFlags */
 	miscFlags = J9MODRON_GCCHK_VERBOSE | J9MODRON_GCCHK_MISC_CHECK;
+
+	
 
 	/* parse supplied options */
 top:
@@ -373,7 +377,12 @@ top:
 							continue;
 						}
 #endif /* J9VM_GC_GENERATIONAL */
-						/* Nothing matched */
+					 if (try_scan(&scan_start, "elasticGC")) {
+                                                        extensions->gcInterval=2000; //based ondefault
+                                                        miscFlags |= J9MODRON_GCCHK_INTERVAL;
+                                                        continue;
+                                                }
+					/* Nothing matched */
 						goto failure;
 					}
 					/* Reached end */
@@ -397,7 +406,15 @@ done:
 	if (0 == checkFlags) {
 		checkFlags = J9MODRON_GCCHK_VERIFY_ALL;
 	}
-
+	//elastic GC
+	//MM_GCExtensions *gcExt = (MM_GCExtensions*)_javaVM->gcExtensions;
+	
+	//if(gcExt->elasticGC.elasticEnabled == 1 && (miscFlags |= J9MODRON_GCCHK_INTERVAL) == 0)
+	//{
+	//	miscFlags |= J9MODRON_GCCHK_INTERVAL;
+		//set gc interval
+	//	extensions->gcInterval = 1000;
+	//}
 	generateCheckList(scanFlags);
 	_checkFlags = checkFlags;
 	_miscFlags = miscFlags;
@@ -410,6 +427,7 @@ done:
 		/* initialize OwnableSynchronizerCount On Lists for ownableSynchronizer consistency check */
 		_engine->initializeOwnableSynchronizerCountOnList();
 	}
+	
 	
 	return true;
 
