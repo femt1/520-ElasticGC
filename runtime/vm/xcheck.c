@@ -40,7 +40,7 @@ processXCheckOptions(J9JavaVM * vm, J9Pool* loadTable, J9VMInitArgs* j9vm_args)
 	IDATA noJNIIndex, noGCIndex, noVMIndex, noneIndex, nocheckCPIndex, nohelpIndex;
 	IDATA helpIndex, memoryHelpIndex, memoryNoneIndex;
 	IDATA dumpIndex, dumpHelpIndex, dumpNoneIndex;
-
+	
     PORT_ACCESS_FROM_JAVAVM(vm);
 
 	/*
@@ -103,6 +103,8 @@ processXCheckOptions(J9JavaVM * vm, J9Pool* loadTable, J9VMInitArgs* j9vm_args)
 		entry = findDllLoadInfo(loadTable, J9_CHECK_GC_DLL_NAME);
 		entry->loadFlags |= LOAD_BY_DEFAULT;
 	}
+	
+
 
 	/*
 	 * VM options

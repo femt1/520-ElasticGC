@@ -52,6 +52,7 @@ class OSMemoryAgent : public RuntimeToolsIntervalAgent
      */
 private:
 
+	
 	/* if true the agent adjust softmx automatically */
 	bool _adjustSoftMx;
 

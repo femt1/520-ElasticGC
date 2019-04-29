@@ -19,7 +19,6 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0 WITH Classpath-exception-2.0 OR LicenseRef-GPL-2.0 WITH Assembly-exception
  *******************************************************************************/
-
 #include "OSMemoryAgent.hpp"
 
 #if defined(AIXPPC)	&& !defined(J9OS_I5)
@@ -361,6 +360,8 @@ OSMemoryAgent::runAction(void)
 #if defined(AIXPPC)	&& !defined(J9OS_I5)
 					}
 #endif
+
+					
 
 					/* in order to avoid OOM conditions we avoid adjusting the softmx value too radically in respect
 					 * to the amount of memory free in the heap
