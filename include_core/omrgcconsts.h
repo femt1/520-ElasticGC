@@ -202,16 +202,76 @@ struct ModronLnrlOptions {
 */
 struct gcElastic {
 	uintptr_t elasticEnabled; //if the struct should be enabled
+
+
+	//these are viewed as a vector (but not actual vectors)
 	uintptr_t numThreads; //number of GC threads
 	uintptr_t heapSize; //heap size of GC
+	uintptr_t heapSizeTarget;
 	int64_t gcInterval; //interval of gc
-
+	int64_t gcIntervalTarget;
+	//will be replaced
 	int64_t gcUtilRangeMax; //max gc util read
 	int64_t gcUtilRangeMin; //min gc util read
 	
 	
 };
 
+/*
+* Struct holding PID controller information for elastic GC
+*/
+struct pidControl {
+
+	//reference point - target point 
+	//this is calculated during runtime so it can be dynamic
+	uintptr_t targetGCUtilChange;
+	
+	//temporary variable to hold present value
+	//just for easy debugging purposes
+	uintptr_t currentGCUtilChange;
+
+	//variable to represent error and
+	//previous error
+	uintptr_t currentError;
+	uintptr_t prevError;
+
+	//proportional variables (P in PID controller)
+	uintptr_t proportionalConstantH;
+	int64_t proportionalConstantI;
+	uintptr_t proportionalConstantT;
+	uintptr_t proportionalH;
+	uintptr_t proportionalT;
+	int64_t proportionalI;
+	//integral variables (I in PID controller)
+	uintptr_t integralConstantH;
+	uintptr_t integralConstantT;
+	int64_t integralConstantI;
+	uintptr_t integralSumH; //sum up integral
+	int64_t integralSumI;
+	uintptr_t integralSumT;
+	uintptr_t integralH; //final value
+	int64_t integralI;
+	uintptr_t integralT;
+
+	//derivative variables (D in PID controller)
+	uintptr_t derivativeConstantH;
+	int64_t derivativeConstantI;
+	uintptr_t derivativeConstantT;
+	uintptr_t derivativeH; //final value
+	int64_t derivativeI;
+	uintptr_t derivativeT;
+	uintptr_t derivativeTempH;//temporary calculation value
+	int64_t derivativeTempI;
+	uintptr_t derivativeTempT;
+	//loop variables - dt in PID controller theory
+	uintptr_t loopTimeDT;
+
+	//output variables for each heap,thread and interval
+	uintptr_t outputH;
+	int64_t outputI;
+	uintptr_t outputT;
+
+};
 /* Struct responsible for monitoring GC to help with measuring impacts of
 * elastic GC mode (still need a new name)
 */
