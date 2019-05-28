@@ -56,37 +56,7 @@ j9gc_initialize_parse_gc_colon(J9JavaVM *javaVM, char **scan_start)
 	MM_GCExtensions *extensions = MM_GCExtensions::getExtensions(javaVM);
 	PORT_ACCESS_FROM_JAVAVM(javaVM);
 
-	
-	if(extensions->elasticGC.elasticEnabled == 1)
-	{
-		if(try_scan(scan_start, "numThreads=") || try_scan(scan_start, ",numThreads=")) {
-			if(!scan_udata_helper(javaVM,scan_start,&extensions->elasticGC.numThreads, "numThreads=") && (!scan_udata_helper(javaVM,scan_start,&extensions->elasticGC.numThreads, ",numThreads=")))
-		{
-			goto _error;
-		}
-		extensions->gcThreadCount = extensions->elasticGC.numThreads;
-		extensions->gcThreadCountForced = true;
-		}
-		if(try_scan(scan_start,"numCores=") || try_scan(scan_start,",numCores="))
-		{
-			if(!scan_udata_helper(javaVM,scan_start, &extensions->elasticGC.numCores, "numCores=") && (!scan_udata_helper(javaVM, scan_start, &extensions->elasticGC.numCores,",numCores=")))
-			{
-				goto _error;
-			}
-		//	goto _exit;
-		}
-		if(try_scan(scan_start, "heapSize=") || try_scan(scan_start, ",heapSize="))
-		{
-			if((!scan_udata_helper(javaVM,scan_start, &extensions->elasticGC.heapSize, ",heapSize=")) && !scan_udata_helper(javaVM,scan_start,&extensions->elasticGC.heapSize, "heapSize="))
-			{
-				goto _error;
-			}
-		//	goto _exit;
-		}
 
-		
-		goto _exit;
-	}
 #if defined(J9VM_GC_THREAD_LOCAL_HEAP)
 	if(try_scan(scan_start, "tlhInitialSize=")) {
 		if(!scan_udata_helper(javaVM, scan_start, &extensions->tlhInitialSize, "tlhInitialSize=")) {
