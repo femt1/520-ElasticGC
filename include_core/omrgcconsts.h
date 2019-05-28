@@ -204,21 +204,29 @@ struct gcElastic {
 	uintptr_t elasticEnabled; //if the struct should be enabled
 	uintptr_t numThreads; //number of GC threads
 	uintptr_t heapSize; //heap size of GC
-	uintptr_t numCores; //expected number of cores
-	
-	uintptr_t controlFlow;//control flow 1 = threads, etc
-	uint64_t currentTimeRunning; //how long the program has been running
-	int64_t gcUtilCurr; //current GC Util
-	int64_t gcUtilPrev; //previous GC Util
-	uint64_t prevTimeStamp; //prev time since last gc util measurement
-
 	int64_t gcInterval; //interval of gc
+
 	int64_t gcUtilRangeMax; //max gc util read
 	int64_t gcUtilRangeMin; //min gc util read
-	uint64_t prevTimeRunningStamp;
+	
+	
+};
 
-	
-	
+/* Struct responsible for monitoring GC to help with measuring impacts of
+* elastic GC mode (still need a new name)
+*/
+struct gcMonitoring {
+	//variables to hold GC utilisation
+	int64_t gcUtilCurr;
+	int64_t gcUtilPrev;
+	//variables to hold CPU utilisation
+	int64_t cpuUtilCurr;
+	int64_t cpuUtilPrev;
+	//time stamp variables
+	uint64_t prevTimeStamp;
+	uint64_t prevTimeRunningStamp;
+	//time running variable
+	uint64_t currentTimeRunning;
 };
 
 /* Flag used to poison collected object pointers for debugging */

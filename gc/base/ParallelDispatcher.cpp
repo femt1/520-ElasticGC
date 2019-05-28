@@ -479,64 +479,56 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 		/* No, use the current active CPU count (unless it would overflow our threadtables) */
 		uintptr_t activeCPUs = omrsysinfo_get_number_CPUs_by_type(OMRPORT_CPU_TARGET);
 		
-		/*
-		* Elastic GC - init set up for number of cores
-		*/
-		if(_extensions->elasticGC.elasticEnabled == 1)
-		{
-			if(_extensions->elasticGC.numCores > 0)
-			{
-				//then set activeCPUs to this 
-				if(_extensions->elasticGC.numCores <= activeCPUs)
-				{
-					activeCPUs = _extensions->elasticGC.numCores;
-				}
-			
-			}
-			_extensions->gcThreadCountForced = true; //go to elasticGC logic next round 
-		}
+		
+	
 		if (activeCPUs < toReturn) {
 			Trc_MM_ParallelDispatcher_adjustThreadCount_ReducedCPU(activeCPUs);
 			toReturn = activeCPUs;
 		}
 		
 	}
-	else if(_extensions->elasticGC.elasticEnabled == 1)
+
+	/* set up ability to monitor GC and CPU utilisation */
+	//variables set up
+	OMRPORT_ACCESS_FROM_OMRVM(_extensions->getOmrVM());
+	intptr_t checker = omrsysinfo_get_CPU_utilization(&_extensions->sysinfoCPUTime);
+	
+	//check error code
+	if(checker >= 0)
 	{
-		OMRPORT_ACCESS_FROM_OMRVM(_extensions->getOmrVM());
-
-                intptr_t checker = omrsysinfo_get_CPU_utilization(&_extensions->sysinfoCPUTime);
-		
-		int64_t gcUtilisation = calculateGCUtil();
-
-		//if no issue with getting cpu utilisation, then continue 
-		if(checker >= 0)
+		//set up time variables 
+		if(_extensions->monitorGC.prevTimeRunningStamp == 0)
 		{
+			_extensions->monitorGC.prevTimeRunningStamp = _extensions->sysinfoCPUTime.timestamp;
+		}
+		//calculate GC utilisaton
+		int64_t gcTimeTemp = calculateGCUtil();
 		
-			//set initial time 
-			if(_extensions->elasticGC.prevTimeRunningStamp == 0)
-			{	
-				_extensions->elasticGC.prevTimeRunningStamp = _extensions->sysinfoCPUTime.timestamp;
-				_extensions->elasticGC.controlFlow = 1; //initially change threads
-				}
-			
-				
-	//calculate GC utlisatio
-			_extensions->elasticGC.gcUtilCurr = (100*(gcUtilisation - _extensions->elasticGC.gcUtilPrev)) / (_extensions->sysinfoCPUTime.timestamp - _extensions->elasticGC.prevTimeStamp);
-		
-			//need to add actual GC utilisation considering total GC time 
-			_extensions->elasticGC.prevTimeStamp = _extensions->sysinfoCPUTime.timestamp;
-			_extensions->elasticGC.gcUtilPrev = gcUtilisation;
+		_extensions->monitorGC.gcUtilCurr = (100 * (gcTimeTemp - _extensions->monitorGC.gcUtilPrev))/(_extensions->sysinfoCPUTime.timestamp - _extensions->monitorGC.prevTimeStamp);
+		//calculate CPU utilisation
 
-			//assign value to cores for verbose purposes
-			if(_extensions->elasticGC.numCores == 0)
-			{
-				_extensions->elasticGC.numCores = omrsysinfo_get_number_CPUs_by_type(OMRPORT_CPU_TARGET);
-			}
-			//work out time the program has been running 
-			_extensions->elasticGC.currentTimeRunning = (_extensions->sysinfoCPUTime.timestamp - _extensions->elasticGC.prevTimeRunningStamp) / 1000000;
-			if(_extensions->elasticGC.currentTimeRunning < 100)
-			{		
+		//calculate time running
+		_extensions.monitorGC.currentTimeRunning = (_extensions->sysinfoCPUTime.timestamp - _extensions->monitorGC.prevTimeRunningStamp) / 1000000;
+
+		//gather data for thresholds, etc		
+
+
+		//set up for next round
+		_extensions->monitorGC.prevTimeStamp = _extensions->sysinfoCPUTime.timestamp;
+		_extensions->monitorGC.gcUtilPrev = gcTimeTemp;
+	}
+	/*configuring elastic mode set up */
+	if(_extensions->elasticGC.elasticEnabled == 1)
+	{
+		_extensions->gcThreadCountForced = 1; //so it doesn't do the normal logic next time
+		if(_extensions->monitorGC.currentTimeRunning > 100)
+		{
+			
+		}
+	}
+
+		
+					
 			//get the max gc util seen 
 				_extensions->elasticGC.gcUtilRangeMax = OMR_MAX(_extensions->elasticGC.gcUtilCurr, _extensions->elasticGC.gcUtilRangeMax);
 			//if no value because of some odd reason, then just set an arbitrary number
@@ -549,17 +541,8 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 
 			_extensions->elasticGC.gcUtilRangeMin = OMR_MIN(_extensions->elasticGC.gcUtilCurr, 5);
 			
-			}	
-			else 
+			//need to rework all below %^^^^^^^^^^
 
-			{
-			//not first 100 seconds of program so can start adjusting
-			
-			//it's a 1 for control flow, so adjust threads if necessary
-				if(( _extensions->elasticGC.controlFlow == 1))
-			{
-				//adjust control flow here as the rest of the if statement actually returns a value i.e. later control flow adjustment may not be reached 	
-		                _extensions->elasticGC.controlFlow = _extensions->elasticGC.currentTimeRunning % 3 + 1;
 			if( (_extensions->elasticGC.gcUtilCurr > _extensions->elasticGC.gcUtilRangeMax))
 				{
 					
@@ -595,8 +578,7 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 		
 	}		
 
-		//recalculate control flow
-		 _extensions->elasticGC.controlFlow = _extensions->elasticGC.currentTimeRunning % 3 + 1;
+
 	}
 	}}
 	

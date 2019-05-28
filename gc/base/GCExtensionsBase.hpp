@@ -207,6 +207,8 @@ protected:
 public:
 	bool _lazyCollectorInit; /**< Are we initializing without a collector? */
 
+	//variables created for elastic GC mode 
+	gcMonitoring monitorGC;
 	gcElastic elasticGC; //elasticGC mode
 	J9SysinfoCPUTime sysinfoCPUTime;
 
