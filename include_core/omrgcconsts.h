@@ -209,11 +209,10 @@ struct gcElastic {
 	uintptr_t heapSize; //heap size of GC
 	uintptr_t heapSizeTarget;
 	int64_t gcInterval; //interval of gc
-	int64_t gcIntervalTarget;
+	int64_t  gcIntervalTarget;
 	//will be replaced
-	int64_t gcUtilRangeMax; //max gc util read
-	int64_t gcUtilRangeMin; //min gc util read
-	
+	//int64_t gcUtilRangeMax; //max gc util read
+	//int64_t gcUtilRangeMin; //min gc util read
 	
 };
 
@@ -236,40 +235,46 @@ struct pidControl {
 	uintptr_t prevError;
 
 	//proportional variables (P in PID controller)
-	uintptr_t proportionalConstantH;
-	int64_t proportionalConstantI;
-	uintptr_t proportionalConstantT;
-	uintptr_t proportionalH;
-	uintptr_t proportionalT;
-	int64_t proportionalI;
+	//changed to float becuase of 0.6 intiil value 
+	double proportionalConstantH;
+	double proportionalConstantI;
+	double proportionalConstantT;
+	double proportionalH;
+	double proportionalT;
+	double proportionalI;
 	//integral variables (I in PID controller)
-	uintptr_t integralConstantH;
-	uintptr_t integralConstantT;
-	int64_t integralConstantI;
-	uintptr_t integralSumH; //sum up integral
-	int64_t integralSumI;
-	uintptr_t integralSumT;
-	uintptr_t integralH; //final value
-	int64_t integralI;
-	uintptr_t integralT;
+	double integralConstantH;
+	double integralConstantT;
+	double integralConstantI;
+	double integralSum; //sum up integral
+	//int64_t integralSumI;
+	//uintptr_t integralSumT;
+	double integralH; //final value
+	double integralI;
+	double integralT;
 
 	//derivative variables (D in PID controller)
-	uintptr_t derivativeConstantH;
-	int64_t derivativeConstantI;
-	uintptr_t derivativeConstantT;
-	uintptr_t derivativeH; //final value
-	int64_t derivativeI;
-	uintptr_t derivativeT;
-	uintptr_t derivativeTempH;//temporary calculation value
-	int64_t derivativeTempI;
-	uintptr_t derivativeTempT;
+	double  derivativeConstantH;
+	double  derivativeConstantI;
+	double derivativeConstantT;
+	double derivativeH; //final value
+	double derivativeI;
+	double derivativeT;
+	//only need one 
+	double  derivativeTempH;//temporary calculation value
+	//int64_t derivativeTempI;
+	//uintptr_t derivativeTempT;
 	//loop variables - dt in PID controller theory
 	uintptr_t loopTimeDT;
-
+	int64_t slidingWindow; //set to 5 usually
 	//output variables for each heap,thread and interval
 	uintptr_t outputH;
 	int64_t outputI;
 	uintptr_t outputT;
+
+	//max heap and min heap variables
+	uintptr_t maxHeap;
+	uintptr_t minHeap;
 
 };
 /* Struct responsible for monitoring GC to help with measuring impacts of
@@ -287,6 +292,7 @@ struct gcMonitoring {
 	uint64_t prevTimeRunningStamp;
 	//time running variable
 	uint64_t currentTimeRunning;
+	int64_t prevCPUTime;
 };
 
 /* Flag used to poison collected object pointers for debugging */
