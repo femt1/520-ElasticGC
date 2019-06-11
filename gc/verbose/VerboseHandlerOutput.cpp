@@ -259,18 +259,35 @@ MM_VerboseHandlerOutput::handleInitialized(J9HookInterface** hook, uintptr_t eve
 
 /**** ELASTIC MODE
 *****/
-	if(_extensions->elasticGC.elasticEnabled == 1)
+	if(_extensions->elasticGC.elasticEnabled >= 1)
 	{
 	writer->formatAndOutput(env, 1, "<attribute name=\"elasticGC enabled\" value=\"%d\" />", _extensions->elasticGC.elasticEnabled);
 	writer->formatAndOutput(env,1, "<attribute name= \"numThreadsSpecified\" value=\"%d\" />", _extensions->elasticGC.numThreads);
-	 writer->formatAndOutput(env, 1, "<attribute name=\"heapSize specified\" value=\"%d\" />", _extensions->elasticGC.heapSize);
-        writer->formatAndOutput(env,1, "<attribute name= \"numCores\" value=\"%d\" />", _extensions->elasticGC.numCores);
-	 writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->elasticGC.gcUtilCurr);
-        writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->elasticGC.currentTimeRunning);
+	 writer->formatAndOutput(env, 1, "<attribute name=\"heapSize specified\" value=\"%lld\" />", _extensions->elasticGC.heapSize);
+	 writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
+        writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
 	writer->formatAndOutput(env, 1, "<attribute name =\"GC Interval\" value=\"%d\" />", _extensions->elasticGC.gcInterval); 
-	 writer->formatAndOutput(env, 1, "<attribute name=\"GC Util Range Max\" value=\"%d\" />", _extensions->elasticGC.gcUtilRangeMax);
-//        writer->formatAndOutput(env,1, "<attribute name= \"GC Policy\" value=\"%d\" />", _extensions->_gcPolicy);
+	//PID controller
+	writer->formatAndOutput(env,1,"<attribute name=\"ProportionalT\" value=\"%d\" />", _extensions->controller.proportionalT);
+	writer->formatAndOutput(env,1,"<attribute name=\"ProportionalI\" value=\"%d\" />", _extensions->controller.proportionalI);
+	writer->formatAndOutput(env,1,"<attribute name=\"ProportionalH\" value=\"%d\" />", _extensions->controller.proportionalH);
+	writer->formatAndOutput(env,1,"<attribute name=\"IntegralT\" value=\"%d\" />", _extensions->controller.integralT);
+	writer->formatAndOutput(env,1,"<attribute name=\"IntegralI\" value=\"%d\" />", _extensions->controller.integralI);
+	writer->formatAndOutput(env,1,"<attribute name=\"IntegralH\" value=\"%d\" />", _extensions->controller.integralH);
+	writer->formatAndOutput(env,1,"<attribute name=\"DerivativeT\" value=\"%d\" />", _extensions->controller.derivativeT);
+	writer->formatAndOutput(env,1,"<attribute name=\"DerivativeI\" value=\"%d\" />", _extensions->controller.derivativeI);
+	writer->formatAndOutput(env,1,"<attribute name=\"DerivativeH\" value=\"%d\" />", _extensions->controller.derivativeH);
+	writer->formatAndOutput(env,1,"<attribute name=\"Target GC Util Change\" value =\"%lld\" />", _extensions->controller.targetGCUtilChange);
+	writer->formatAndOutput(env,1, "<attribute name=\"Current GC Util Change\" value=\"%lld\"/>", _extensions->controller.currentGCUtilChange);
+	writer->formatAndOutput(env,1,"<attribute name=\"Current Error\" value=\"%lld\" />", _extensions->controller.currentError);
+	writer->formatAndOutput(env,1,"<attribute name=\"Loop Time for DT\" value=\"%lld\" />", _extensions->controller.loopTimeDT);
+	writer->formatAndOutput(env,1,"<attribute name=\"Output H\" value=\"%llu\"/>", _extensions->controller.outputH);
+	writer->formatAndOutput(env,1,"<attribute name=\"Output I\" value=\"%d\"/>", _extensions->controller.outputI);
+	writer->formatAndOutput(env,1,"<attribute name=\"Output T\" value=\"%llu\"/>", _extensions->controller.outputT);
 	}
+	writer->formatAndOutput(env,1,"<attribute name=\"GC Util currently\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
+	writer->formatAndOutput(env,1,"<attribute name=\"CPU Util currently\" value=\"%lld\" />", _extensions->monitorGC.cpuUtilCurr);
+	
 #if defined(OMR_GC_CONCURRENT_SCAVENGER)
 	if (_extensions->isConcurrentScavengerEnabled()) {
 		writer->formatAndOutput(env, 1, "<attribute name=\"concurrentScavenger\" value=\"%s\" />",
@@ -285,6 +302,13 @@ MM_VerboseHandlerOutput::handleInitialized(J9HookInterface** hook, uintptr_t eve
 #endif /* OMR_GC_CONCURRENT_SCAVENGER */
 	writer->formatAndOutput(env, 1, "<attribute name=\"maxHeapSize\" value=\"0x%zx\" />", event->maxHeapSize);
 	writer->formatAndOutput(env, 1, "<attribute name=\"initialHeapSize\" value=\"0x%zx\" />", event->initialHeapSize);
+
+
+//set up for elastic GC / control theory
+_extensions->controller.maxHeap = event->maxHeapSize;
+_extensions->controller.minHeap = event->initialHeapSize;
+
+
 #if defined(OMR_GC_COMPRESSED_POINTERS)
 	writer->formatAndOutput(env, 1, "<attribute name=\"compressedRefs\" value=\"true\" />");
 	writer->formatAndOutput(env, 1, "<attribute name=\"compressedRefsDisplacement\" value=\"0x%zx\" />", 0);
@@ -411,19 +435,37 @@ MM_VerboseHandlerOutput::handleCycleContinue(J9HookInterface** hook, uintptr_t e
 
 	enterAtomicReportingBlock();
 	writer->formatAndOutput(env, 0, "<cycle-continue %s />", tagTemplate);
-	if(_extensions->elasticGC.elasticEnabled == 1)
-	{
-	writer->formatAndOutput(env, 1, "<attribute name=\"elasticGC enabled\" value=\"%d\" />", _extensions->elasticGC.elasticEnabled);
+  if(_extensions->elasticGC.elasticEnabled >= 1)
+        {
+        writer->formatAndOutput(env, 1, "<attribute name=\"elasticGC enabled\" value=\"%d\" />", _extensions->elasticGC.elasticEnabled);
         writer->formatAndOutput(env,1, "<attribute name= \"numThreadsSpecified\" value=\"%d\" />", _extensions->elasticGC.numThreads);
-         writer->formatAndOutput(env, 1, "<attribute name=\"heapSize specified\" value=\"%d\" />", _extensions->elasticGC.heapSize);
-        writer->formatAndOutput(env,1, "<attribute name= \"numCores\" value=\"%lld\" />", _extensions->elasticGC.numCores);
-         writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->elasticGC.gcUtilCurr);
-        writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->elasticGC.currentTimeRunning);
-	writer->formatAndOutput(env, 1, "<attribute name =\"Control flow\" value=\"%d\" />", _extensions->elasticGC.controlFlow);
+         writer->formatAndOutput(env, 1, "<attribute name=\"heapSize specified\" value=\"%lld\" />", _extensions->elasticGC.heapSize);
+         writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
+        writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
         writer->formatAndOutput(env, 1, "<attribute name =\"GC Interval\" value=\"%d\" />", _extensions->elasticGC.gcInterval);
-         writer->formatAndOutput(env, 1, "<attribute name=\"GC Util Range Max\" value=\"%lld\" />", _extensions->elasticGC.gcUtilRangeMax);
-  //      writer->formatAndOutput(env,1, "<attribute name= \"GC Policy\" value=\"%d\" />", _extensions->_gcPolicy);
-	}
+        //PID controller
+        writer->formatAndOutput(env,1,"<attribute name=\"ProportionalT\" value=\"%d\" />", _extensions->controller.proportionalT);
+        writer->formatAndOutput(env,1,"<attribute name=\"ProportionalI\" value=\"%d\" />", _extensions->controller.proportionalI);
+        writer->formatAndOutput(env,1,"<attribute name=\"ProportionalH\" value=\"%d\" />", _extensions->controller.proportionalH);
+
+ writer->formatAndOutput(env,1,"<attribute name=\"IntegralT\" value=\"%d\" />", _extensions->controller.integralT);
+        writer->formatAndOutput(env,1,"<attribute name=\"IntegralI\" value=\"%d\" />", _extensions->controller.integralI);
+        writer->formatAndOutput(env,1,"<attribute name=\"IntegralH\" value=\"%d\" />", _extensions->controller.integralH);
+        writer->formatAndOutput(env,1,"<attribute name=\"DerivativeT\" value=\"%d\" />", _extensions->controller.derivativeT);
+        writer->formatAndOutput(env,1,"<attribute name=\"DerivativeI\" value=\"%d\" />", _extensions->controller.derivativeI);
+        writer->formatAndOutput(env,1,"<attribute name=\"DerivativeH\" value=\"%d\" />", _extensions->controller.derivativeH);
+
+ writer->formatAndOutput(env,1,"<attribute name=\"Current Error\" value=\"%lld\" />", _extensions->controller.currentError);
+ writer->formatAndOutput(env,1,"<attribute name=\"Target GC Util Change\" value =\"%lld\" />", _extensions->controller.targetGCUtilChange);
+        writer->formatAndOutput(env,1, "<attribute name=\"Current GC Util Change\" value=\"%lld\"/>", _extensions->controller.currentGCUtilChange);
+        writer->formatAndOutput(env,1,"<attribute name=\"Loop Time for DT\" value=\"%lld\" />", _extensions->controller.loopTimeDT);
+        writer->formatAndOutput(env,1,"<attribute name=\"Output H\" value=\"%llu\"/>", _extensions->controller.outputH);
+        writer->formatAndOutput(env,1,"<attribute name=\"Output I\" value=\"%d\"/>", _extensions->controller.outputI);
+        writer->formatAndOutput(env,1,"<attribute name=\"Output T\" value=\"%llu\"/>", _extensions->controller.outputT);
+        }
+        writer->formatAndOutput(env,1,"<attribute name=\"GC Util currently\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
+        writer->formatAndOutput(env,1,"<attribute name=\"CPU Util currently\" value=\"%lld\" />", _extensions->monitorGC.cpuUtilCurr);
+
 	writer->flush(env);
 	exitAtomicReportingBlock();
 }
@@ -448,20 +490,36 @@ MM_VerboseHandlerOutput::handleCycleEnd(J9HookInterface** hook, uintptr_t eventN
 	} else {
 		writer->formatAndOutput(env, 0, "<cycle-end %s />", tagTemplate);
 	}
-	if(_extensions->elasticGC.elasticEnabled == 1)
-	{
-	writer->formatAndOutput(env, 1, "<attribute name=\"elasticGC enabled\" value=\"%d\" />", _extensions->elasticGC.elasticEnabled);
+
+  if(_extensions->elasticGC.elasticEnabled >= 1)
+        {
+        writer->formatAndOutput(env, 1, "<attribute name=\"elasticGC enabled\" value=\"%d\" />", _extensions->elasticGC.elasticEnabled);
         writer->formatAndOutput(env,1, "<attribute name= \"numThreadsSpecified\" value=\"%d\" />", _extensions->elasticGC.numThreads);
          writer->formatAndOutput(env, 1, "<attribute name=\"heapSize specified\" value=\"%d\" />", _extensions->elasticGC.heapSize);
-        writer->formatAndOutput(env,1, "<attribute name= \"numCores\" value=\"%lld\" />", _extensions->elasticGC.numCores);
-         writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->elasticGC.gcUtilCurr);
-        writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->elasticGC.currentTimeRunning);
+         writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
+        writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
         writer->formatAndOutput(env, 1, "<attribute name =\"GC Interval\" value=\"%d\" />", _extensions->elasticGC.gcInterval);
-		writer->formatAndOutput(env, 1, "<attribute name =\"Control flow\" value=\"%d\" />", _extensions->elasticGC.controlFlow);
-writer->formatAndOutput(env, 1, "<attribute name=\"GC Util Range Max\" value=\"%lld\" />", _extensions->elasticGC.gcUtilRangeMax);
-    //    writer->formatAndOutput(env,1, "<attribute name= \"GC Policy\" value=\"%d\" />", _extensions->_gcPolicy);
-	}
+        //PID controller
+        writer->formatAndOutput(env,1,"<attribute name=\"ProportionalT\" value=\"%d\" />", _extensions->controller.proportionalT);
+        writer->formatAndOutput(env,1,"<attribute name=\"ProportionalI\" value=\"%d\" />", _extensions->controller.proportionalI);
+        writer->formatAndOutput(env,1,"<attribute name=\"ProportionalH\" value=\"%d\" />", _extensions->controller.proportionalH);
+ writer->formatAndOutput(env,1,"<attribute name=\"Current Error\" value=\"%lld\" />", _extensions->controller.currentError);
+ writer->formatAndOutput(env,1,"<attribute name=\"IntegralT\" value=\"%d\" />", _extensions->controller.integralT);
+        writer->formatAndOutput(env,1,"<attribute name=\"IntegralI\" value=\"%d\" />", _extensions->controller.integralI);
+        writer->formatAndOutput(env,1,"<attribute name=\"IntegralH\" value=\"%d\" />", _extensions->controller.integralH);
+        writer->formatAndOutput(env,1,"<attribute name=\"DerivativeT\" value=\"%d\" />", _extensions->controller.derivativeT);
+        writer->formatAndOutput(env,1,"<attribute name=\"DerivativeI\" value=\"%d\" />", _extensions->controller.derivativeI);
+        writer->formatAndOutput(env,1,"<attribute name=\"DerivativeH\" value=\"%d\" />", _extensions->controller.derivativeH);
 
+        writer->formatAndOutput(env,1,"<attribute name=\"Loop Time for DT\" value=\"%lld\" />", _extensions->controller.loopTimeDT);
+        writer->formatAndOutput(env,1,"<attribute name=\"Output H\" value=\"%llu\"/>", _extensions->controller.outputH);
+        writer->formatAndOutput(env,1,"<attribute name=\"Output I\" value=\"%d\"/>", _extensions->controller.outputI);
+        writer->formatAndOutput(env,1,"<attribute name=\"Output T\" value=\"%llu\"/>", _extensions->controller.outputT);
+ writer->formatAndOutput(env,1,"<attribute name=\"Target GC Util Change\" value =\"%lld\" />", _extensions->controller.targetGCUtilChange);
+     writer->formatAndOutput(env,1, "<attribute name=\"Current GC Util Change\" value=\"%lld\"/>", _extensions->controller.currentGCUtilChange);
+        }
+        writer->formatAndOutput(env,1,"<attribute name=\"GC Util currently\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
+        writer->formatAndOutput(env,1,"<attribute name=\"CPU Util currently\" value=\"%lld\" />", _extensions->monitorGC.cpuUtilCurr);
 
 	writer->flush(env);
 	exitAtomicReportingBlock();
