@@ -456,6 +456,7 @@ int64_t MM_ParallelDispatcher::calculateGCUtil()
 	
 	return _extensions->_masterThreadCpuTimeNanos + timeinNanos;
 }
+
 uintptr_t 
 MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 {
@@ -501,87 +502,191 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 		{
 			_extensions->monitorGC.prevTimeRunningStamp = _extensions->sysinfoCPUTime.timestamp;
 		}
+		
+		//record GC Util time
+		//_extensions->monitorGC.gcUtilPrev = _extensions->monitorGC.gcUtilCurr;
+	//	_extensions->elasticGC.elasticEnabled = 2;
 		//calculate GC utilisaton
 		int64_t gcTimeTemp = calculateGCUtil();
-		
+		//derivative
+		_extensions->controller.loopTimeDT = _extensions->monitorGC.currentTimeRunning;
+
 		_extensions->monitorGC.gcUtilCurr = (100 * (gcTimeTemp - _extensions->monitorGC.gcUtilPrev))/(_extensions->sysinfoCPUTime.timestamp - _extensions->monitorGC.prevTimeStamp);
 		//calculate CPU utilisation
+		_extensions->monitorGC.cpuUtilCurr = (100 * (_extensions->sysinfoCPUTime.cpuTime - gcTimeTemp - _extensions->monitorGC.prevCPUTime))/(_extensions->sysinfoCPUTime.timestamp - _extensions->monitorGC.prevTimeStamp);
+		uintptr_t activeCPUs = omrsysinfo_get_number_CPUs_by_type(OMRPORT_CPU_TARGET);
+		_extensions->monitorGC.cpuUtilCurr = _extensions->monitorGC.cpuUtilCurr / activeCPUs;	
+	//calculate time running
+		_extensions->monitorGC.currentTimeRunning = (_extensions->sysinfoCPUTime.timestamp - _extensions->monitorGC.prevTimeRunningStamp) / 1000000;
+		
+		//gather data for thresholds, etc	
+		 
+                /* No, use the current active CPU count (unless it would overflow our threadtables) */
+          //     uintptr_t activeCPUs = omrsysinfo_get_number_CPUs_by_type(OMRPORT_CPU_TARGET);
+		//if(_extensions->monitorGC.gcUtilCurr < _extensions->monitorGC.gcUtilPrev)
+		//{
+		//	_extensions->controller.currentGCUtilChange = 0;
+	//	}
+		 //if(_extensions->monitorGC.gcUtilPrev > 0){
 
-		//calculate time running
-		_extensions.monitorGC.currentTimeRunning = (_extensions->sysinfoCPUTime.timestamp - _extensions->monitorGC.prevTimeRunningStamp) / 1000000;
-
-		//gather data for thresholds, etc		
-
+		_extensions->controller.currentGCUtilChange = _extensions->monitorGC.gcUtilCurr;
+		//_extensions->controller.currentGCUtilChange = ( _extensions->monitorGC.gcUtilCurr - _extensions->monitorGC.gcUtilPrev);
+///_extensions->monitorGC.gcUtilPrev;
+		//this is an arbitrary calculation 
+		_extensions->controller.targetGCUtilChange = activeCPUs * 5;   
+	//	_extensions->elasticGC.elasticEnabled = 3;
 
 		//set up for next round
 		_extensions->monitorGC.prevTimeStamp = _extensions->sysinfoCPUTime.timestamp;
+		
 		_extensions->monitorGC.gcUtilPrev = gcTimeTemp;
+		_extensions->monitorGC.prevCPUTime = _extensions->sysinfoCPUTime.cpuTime;
 	}
 	/*configuring elastic mode set up */
-	if(_extensions->elasticGC.elasticEnabled == 1)
+//	if(_extensions->elasticGC.elasticEnabled == 1)
+	if(_extensions->elasticGC.elasticEnabled >= 1)
 	{
+///		_extensions->elasticGC.elasticEnabled = 4;
 		_extensions->gcThreadCountForced = 1; //so it doesn't do the normal logic next time
 		if(_extensions->monitorGC.currentTimeRunning > 100)
 		{
+			/* update control theory components
+			 * then re-calculate what should change
+			* adjust the chosen variables (heap, threads, gc interval)
+			* the actual updating will be done in the relevant classes
+			*/
 			
+			//calculate constants for Ki, Kp and Kd for each variable if required 
+			
+			//for proportional - just using the PID control logic from Ziegler-Nichols
+			_extensions->controller.proportionalConstantH = 0.6;
+			_extensions->controller.proportionalConstantI = 0.6;
+			_extensions->controller.proportionalConstantT = 0.6;
+
+			//for integral 
+			_extensions->controller.integralConstantT = 1; //just set to 0 (manual tuning)
+			_extensions->controller.integralConstantI = 1;
+			_extensions->controller.integralConstantH = 1;
+		
+
+			//for derivative
+			_extensions->controller.derivativeConstantT = 1; //just set to 0 (manual tuning)
+			_extensions->controller.derivativeConstantI = 1;
+			_extensions->controller.derivativeConstantH = 1;
+			//calculate dt (loop time)
+			if(_extensions->controller.loopTimeDT > 0)
+			{
+				_extensions->controller.loopTimeDT = _extensions->monitorGC.currentTimeRunning - _extensions->controller.loopTimeDT;	
+		}
+			else
+			{
+				_extensions->controller.loopTimeDT = _extensions->monitorGC.currentTimeRunning;
+			}
+
+			//calculate current error = set point - present value
+			if(_extensions->controller.currentGCUtilChange < _extensions->controller.targetGCUtilChange)
+			{
+				_extensions->controller.currentError = 0;
+			}
+			else 
+			{ 
+			_extensions->controller.currentError = (_extensions->controller.currentGCUtilChange - _extensions->controller.targetGCUtilChange);	
+			}
+			if(_extensions->controller.currentError < 0)
+			{
+				 _extensions->controller.currentError = 0;
+			}	
+			//_extensions->controller.proportionalT = _extensions->controller.proportionalConstantT;
+			//proportionate logic for threads, heap and interval (in that order)
+			_extensions->controller.proportionalT = (_extensions->controller.proportionalConstantT * _extensions->controller.currentError);
+
+			//_extensions->controller.proportionalT = 5;
+			_extensions->controller.proportionalH = _extensions->controller.proportionalConstantH * _extensions->controller.currentError;
+		
+			_extensions->controller.proportionalI = _extensions->controller.proportionalConstantI * _extensions->controller.currentError;
+	
+			//_extensions->controller.loopTimeDT = _extensions->controller.loopTimeDT/100;
+			//integral logic for threaads, heap and interval (in that order)
+			if(_extensions->controller.slidingWindow >=5)
+			{
+				_extensions->controller.integralSum = 0;
+			}
+			_extensions->controller.integralSum += _extensions->controller.currentError * _extensions->controller.loopTimeDT;
+			_extensions->controller.slidingWindow+=1;
+			_extensions->controller.integralT = _extensions->controller.integralSum * _extensions->controller.integralConstantT;
+			//_extensions->controller.integralI = 1;
+			_extensions->controller.integralI = _extensions->controller.integralSum * _extensions->controller.integralConstantI;
+			_extensions->controller.integralH = _extensions->controller.integralSum * _extensions->controller.integralConstantH;
+			
+			
+			//derivative logic for threads, heap and interval (in that order) 
+			if(_extensions->controller.prevError > 0)
+			{
+				_extensions->controller.derivativeTempH = (_extensions->controller.currentError - _extensions->controller.prevError) / _extensions->controller.loopTimeDT;
+			}
+			else
+			{
+				_extensions->controller.derivativeTempH = _extensions->controller.currentError / _extensions->controller.loopTimeDT;
+			}
+			_extensions->controller.derivativeT = _extensions->controller.derivativeTempH * _extensions->controller.derivativeConstantT;
+			_extensions->controller.derivativeI = _extensions->controller.derivativeTempH * _extensions->controller.derivativeConstantI;
+			_extensions->controller.derivativeH = _extensions->controller.derivativeTempH * _extensions->controller.derivativeConstantH;
+			
+			
+			//calculate output
+			//_extensions->controller.outputH =  MM_Math::roundToSizeofUDATA(_extensions->controller.proportionalH + _extensions->controller.integralH + _extensions->controller.derivativeH);
+			//round heap size to ceiling
+			_extensions->controller.outputH = MM_Math::roundToCeiling(_extensions->regionSize,_extensions->controller.outputH);
+			//_extensions->controller.outputI = ;
+			_extensions->controller.outputI = (int64_t) MM_Math::roundToSizeofUDATA(_extensions->controller.proportionalI  + _extensions->controller.integralI + _extensions->controller.derivativeI);
+			_extensions->controller.outputT =MM_Math::roundToSizeofUDATA( _extensions->controller.proportionalT  + _extensions->controller.integralT + _extensions->controller.derivativeT);
+			//_extensions->controller.outputT = 1;
+			//adjust variables if within min and max 
+				if(_extensions->controller.outputH > _extensions->controller.maxHeap) 
+				{
+					_extensions->controller.outputH = _extensions->controller.maxHeap - 65536;//_extensions->regionSize; //minus a region size
+				}
+				else if(_extensions->controller.outputH < _extensions->controller.minHeap)
+				{
+					_extensions->controller.outputH = _extensions->controller.minHeap;
+				}
+				if(_extensions->controller.outputT < 1)
+				{
+					_extensions->controller.outputT = 1;
+				}
+				  uintptr_t activeCPUs = omrsysinfo_get_number_CPUs_by_type(OMRPORT_CPU_TARGET);
+				//could add max 
+				if(_extensions->controller.outputT > activeCPUs)
+				{
+					_extensions->controller.outputT = activeCPUs;
+				}
+				if(_extensions->controller.outputI < 200)
+			{	
+					//arbitrary minimum value
+					_extensions->controller.outputI = 200; 
+				}
+				else if(_extensions->controller.outputI > 4000)
+				{
+					//arbitrary maximum value 
+					_extensions->controller.outputI = 4000;
+				}
+			
+			_extensions->elasticGC.numThreads = _extensions->controller.outputT;
+		
+			_extensions->elasticGC.heapSizeTarget = _extensions->controller.outputH;
+			
+			_extensions->elasticGC.gcIntervalTarget = _extensions->controller.outputI -1 ;
+			//set current error to prev error 
+			_extensions->controller.prevError = _extensions->controller.currentError;
+				
+			//adjust threads
+			 _extensions->gcThreadCount = _extensions->elasticGC.numThreads; 
+			return _extensions->gcThreadCount;
 		}
 	}
 
+
 		
-					
-			//get the max gc util seen 
-				_extensions->elasticGC.gcUtilRangeMax = OMR_MAX(_extensions->elasticGC.gcUtilCurr, _extensions->elasticGC.gcUtilRangeMax);
-			//if no value because of some odd reason, then just set an arbitrary number
-			if(_extensions->elasticGC.gcUtilRangeMax == 0)
-			{
-				//give it arbitrary value of 
-				_extensions->elasticGC.gcUtilRangeMax = 10;
-			}
-			//set a min value
-
-			_extensions->elasticGC.gcUtilRangeMin = OMR_MIN(_extensions->elasticGC.gcUtilCurr, 5);
-			
-			//need to rework all below %^^^^^^^^^^
-
-			if( (_extensions->elasticGC.gcUtilCurr > _extensions->elasticGC.gcUtilRangeMax))
-				{
-					
-					//need to adjust threads
-					if(_extensions->elasticGC.numThreads > 1)
-					{
-						_extensions->elasticGC.numThreads -= 1;
-						_extensions->gcThreadCount = _extensions->elasticGC.numThreads;
-						return _extensions->elasticGC.numThreads;
-					}
-					else 
-					{
-						_extensions->elasticGC.numThreads = _extensions->gcThreadCount;
-						return _extensions->elasticGC.numThreads;
-					}
-				}
-				else if(_extensions->elasticGC.gcUtilCurr < _extensions->elasticGC.gcUtilRangeMin)
-				{
-					//need to adjust threaads i.e increase
-			
-                                                _extensions->elasticGC.numThreads += 1;
-                                                _extensions->gcThreadCount = _extensions->elasticGC.numThreads;
-                                                return _extensions->elasticGC.numThreads;
-                                }
-                                else 
-                                {
-			
-					_extensions->elasticGC.numThreads = _extensions->gcThreadCount;
-					return _extensions->elasticGC.numThreads;
-				}		
-	
-		
-		
-	}		
-
-
-	}
-	}}
-	
 	return toReturn;
 }
 
