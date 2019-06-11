@@ -578,11 +578,12 @@ MM_ParallelGlobalGC::shouldCompactThisCycle(MM_EnvironmentBase *env, MM_Allocate
 
 	/* Elastic GC logic 
 	*/
-	if(_extensions->elasticGC.elasticEnabled == 1 && _extensions->elasticGC.controlFlow == 3)
+	if(_extensions->elasticGC.elasticEnabled == 1)
 	{
 		//put in GC util and core logic
 		//if(_extensions->elasticGC.
 		_extensions->elasticGC.heapSize = _extensions->heap->getActiveMemorySize();
+		compactReason = COMPACT_CONTRACT;
 		goto compactionReqd;
 	}
 #if defined(OMR_GC_IDLE_HEAP_MANAGER)
@@ -777,7 +778,7 @@ MM_ParallelGlobalGC::compactRequiredBeforeHeapContraction(MM_EnvironmentBase *en
 		}
 	}
  	/* elastic GC logic */
-	if(_extensions->elasticGC.elasticEnabled == 1 && _extensions->elasticGC.controlFlow == 3)
+	if(_extensions->elasticGC.elasticEnabled == 1)
 	{
 		goto compactionReqd;
 	}
