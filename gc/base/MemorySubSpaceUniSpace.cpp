@@ -95,18 +95,13 @@ void
 MM_MemorySubSpaceUniSpace::checkResize(MM_EnvironmentBase *env, MM_AllocateDescription *allocDescription, bool _systemGC)
 {
 	uintptr_t oldVMState = env->pushVMstate(OMRVMSTATE_GC_CHECK_RESIZE);
-	if(_extensions->elasticGC.elasticEnabled == 1 && _extensions->elasticGC.controlFlow != 3)
-	{
-		
-	}
-	else 
-	{
+	
 	if (!timeForHeapContract(env, allocDescription, _systemGC)) {
 		timeForHeapExpand(env, allocDescription);
 	}	
 	
 	env->popVMstate(oldVMState);
-	}
+
 }
 
 /**
@@ -245,12 +240,14 @@ MM_MemorySubSpaceUniSpace::timeForHeapExpand(MM_EnvironmentBase *env, MM_Allocat
 		sizeInBytesRequired = 0;
 	}
 	
-	if(_extensions->elasticGC.elasticEnabled == 1 && _extensions->elasticGC.gcUtilCurr < _extensions->elasticGC.gcUtilRangeMin )
+	/*
+	* Elastic GC logic
+	*/
+	if(_extensions->elasticGC.elasticEnabled == 1 && _extensions->elasticGC.heapSizeTarget > _extensions->elasticGC.heapSize )
 	{
 		expandToSatisfy = true;
-		sizeInBytesRequired = env->getExtensions()->regionSize;
+		sizeInBytesRequired = _extensions->elasticGC.heapSizeTarget - _extensions->elasticGC.heapSize;;
 		
-		_extensions->elasticGC.heapSize = sizeInBytesRequired + getActiveMemorySize();
 	}
 	return 0 != (_expansionSize = calculateExpandSize(env, sizeInBytesRequired, expandToSatisfy));
 	
@@ -307,10 +304,10 @@ MM_MemorySubSpaceUniSpace::timeForHeapContract(MM_EnvironmentBase *env, MM_Alloc
 	}
 	
 	/* Elastic GC logic */
-	if(_extensions->elasticGC.elasticEnabled == 1 && _extensions->elasticGC.gcUtilCurr > _extensions->elasticGC.gcUtilRangeMax)
+	if(_extensions->elasticGC.elasticEnabled == 1 && _extensions->elasticGC.heapSizeTarget < _extensions->elasticGC.heapSize)
 	{
-		_extensions->elasticGC.heapSize = getActiveMemorySize() - _extensions->regionSize;
-		_contractionSize = getActiveMemorySize() - _extensions->elasticGC.heapSize;
+	
+		_contractionSize =  _extensions->elasticGC.heapSize - _extensions->elasticGC.heapSizeTarget;
 		_extensions->heap->getResizeStats()->setLastContractReason(HEAP_RESIZE);
 		return true;
 	}
@@ -754,14 +751,14 @@ MM_MemorySubSpaceUniSpace::adjustExpansionWithinSoftMax(MM_EnvironmentBase *env,
 	{
 		// elastic GC logic
 		
-		if(env->getExtensions()->elasticGC.heapSize < activeMemorySize)
+		if(env->getExtensions()->elasticGC.heapSizeTarget < _extensions->elasticGC.heapSize)
 		{
 			expandSize = 0;
 		}
-		else if((activeMemorySize + expandSize) > env->getExtensions()->elasticGC.heapSize)
+		else if((env->getExtensions()->elasticGC.heapSize + expandSize) > env->getExtensions()->elasticGC.heapSizeTarget)
 		{
 
-			expandSize = env->getExtensions()->elasticGC.heapSize - activeMemorySize;
+			expandSize = env->getExtensions()->elasticGC.heapSizeTarget - env->getExtensions()->elasticGC.heapSize;
 		}
 	}
 	return expandSize;
