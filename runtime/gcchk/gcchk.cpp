@@ -250,27 +250,18 @@ excludeLocalGc(J9JavaVM *javaVM)
 		/*
 		* Elastic GC logic
 		*/
-		if(gcExtensions->elasticGC.elasticEnabled == 1 && gcExtensions->elasticGC.controlFlow == 2)
+		if(gcExtensions->elasticGC.elasticEnabled >= 1)
 		{
 			//get gc Utilisation
-				
-		if(gcExtensions->elasticGC.gcUtilCurr > gcExtensions->elasticGC.gcUtilRangeMax)
-			{
-				extensions->gcInterval = extensions->gcInterval + 100;
-				gcExtensions->elasticGC.gcInterval = extensions->gcInterval;	
-			if((extensions->globalGcCount + extensions ->localGcCount) % extensions->gcInterval > 3)
-				{
-				return true;
-				}
-			}
-		else if(gcExtensions->elasticGC.gcUtilCurr < gcExtensions->elasticGC.gcUtilRangeMin)
-		{
-			extensions->gcInterval = extensions->gcInterval - 100;
+			//gcExtensions->elasticGC.gcInterval = gcExtensions->elasticGC.gcIntervalTarget;
+			extensions->gcInterval = gcExtensions->elasticGC.gcIntervalTarget + 1; //gcExtensions->elasticGC.gcInterval;
 			gcExtensions->elasticGC.gcInterval = extensions->gcInterval;
+			if((extensions->globalGcCount + extensions ->localGcCount) % extensions->gcInterval > 3)
+			{
+				return true;
+			}
 		}
-		}
-
-		return  ( ((extensions->globalGcCount + extensions->localGcCount) % extensions->gcInterval) != 0 );
+			return  ( ((extensions->globalGcCount + extensions->localGcCount) % extensions->gcInterval) != 0 );
 	}
 
 	if (cycle->getMiscFlags() & J9MODRON_GCCHK_START_INDEX) {
