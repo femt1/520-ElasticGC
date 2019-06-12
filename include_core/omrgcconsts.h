@@ -223,16 +223,16 @@ struct pidControl {
 
 	//reference point - target point 
 	//this is calculated during runtime so it can be dynamic
-	uintptr_t targetGCUtilChange;
+	double targetGCUtilChange;
 	
 	//temporary variable to hold present value
 	//just for easy debugging purposes
-	uintptr_t currentGCUtilChange;
+	double currentGCUtilChange;
 
 	//variable to represent error and
 	//previous error
-	uintptr_t currentError;
-	uintptr_t prevError;
+	double currentError;
+	double prevError;
 
 	//proportional variables (P in PID controller)
 	//changed to float becuase of 0.6 intiil value 
@@ -265,8 +265,8 @@ struct pidControl {
 	//int64_t derivativeTempI;
 	//uintptr_t derivativeTempT;
 	//loop variables - dt in PID controller theory
-	uintptr_t loopTimeDT;
-	int64_t slidingWindow; //set to 5 usually
+	double loopTimeDT;
+	double slidingWindow; //set to 5 usually
 	//output variables for each heap,thread and interval
 	uintptr_t outputH;
 	int64_t outputI;
