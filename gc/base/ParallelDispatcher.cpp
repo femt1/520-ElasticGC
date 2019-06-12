@@ -559,9 +559,9 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 			//calculate constants for Ki, Kp and Kd for each variable if required 
 			
 			//for proportional - just using the PID control logic from Ziegler-Nichols
-			_extensions->controller.proportionalConstantH = 0.6;
-			_extensions->controller.proportionalConstantI = 0.6;
-			_extensions->controller.proportionalConstantT = 0.6;
+			_extensions->controller.proportionalConstantH = 1;
+			_extensions->controller.proportionalConstantI = 1;
+			_extensions->controller.proportionalConstantT = 1;
 
 			//for integral 
 			_extensions->controller.integralConstantT = 1; //just set to 0 (manual tuning)
@@ -570,9 +570,9 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 		
 
 			//for derivative
-			_extensions->controller.derivativeConstantT = 1; //just set to 0 (manual tuning)
-			_extensions->controller.derivativeConstantI = 1;
-			_extensions->controller.derivativeConstantH = 1;
+			_extensions->controller.derivativeConstantT = 0.5; //just set to 0 (manual tuning)
+			_extensions->controller.derivativeConstantI = 0.5;
+			_extensions->controller.derivativeConstantH = 0.5;
 			//calculate dt (loop time)
 			if(_extensions->controller.loopTimeDT > 0)
 			{
@@ -584,18 +584,18 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 			}
 
 			//calculate current error = set point - present value
-			if(_extensions->controller.currentGCUtilChange < _extensions->controller.targetGCUtilChange)
-			{
-				_extensions->controller.currentError = 0;
-			}
-			else 
-			{ 
+			//if(_extensions->controller.currentGCUtilChange > _extensions->controller.targetGCUtilChange)
+			//{
+			//	_extensions->controller.currentError = _extensions->controller.currentGCUtilChange - _extensions->controll;
+		//	}
+		//	else 
+		//	{ 
 			_extensions->controller.currentError = (_extensions->controller.currentGCUtilChange - _extensions->controller.targetGCUtilChange);	
-			}
-			if(_extensions->controller.currentError < 0)
-			{
-				 _extensions->controller.currentError = 0;
-			}	
+		//	}
+			//if(_extensions->controller.currentError < 0)
+			//{
+			//	 _extensions->controller.currentError = 0;
+		//	}	
 			//_extensions->controller.proportionalT = _extensions->controller.proportionalConstantT;
 			//proportionate logic for threads, heap and interval (in that order)
 			_extensions->controller.proportionalT = (_extensions->controller.proportionalConstantT * _extensions->controller.currentError);
@@ -634,9 +634,9 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 			
 			
 			//calculate output
-			//_extensions->controller.outputH =  MM_Math::roundToSizeofUDATA(_extensions->controller.proportionalH + _extensions->controller.integralH + _extensions->controller.derivativeH);
+			_extensions->controller.outputH =  MM_Math::roundToSizeofUDATA(_extensions->controller.proportionalH + _extensions->controller.integralH + _extensions->controller.derivativeH);
 			//round heap size to ceiling
-			_extensions->controller.outputH = MM_Math::roundToCeiling(_extensions->regionSize,_extensions->controller.outputH);
+			//_extensions->controller.outputH = MM_Math::roundToCeiling(_extensions->regionSize,_extensions->controller.outputH);
 			//_extensions->controller.outputI = ;
 			_extensions->controller.outputI = (int64_t) MM_Math::roundToSizeofUDATA(_extensions->controller.proportionalI  + _extensions->controller.integralI + _extensions->controller.derivativeI);
 			_extensions->controller.outputT =MM_Math::roundToSizeofUDATA( _extensions->controller.proportionalT  + _extensions->controller.integralT + _extensions->controller.derivativeT);
