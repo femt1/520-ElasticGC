@@ -216,8 +216,11 @@ struct gcElastic {
 	
 };
 
+
+
 /*
 * Struct holding PID controller information for elastic GC
+* Based on https://gist.github.com/bradley219/5373998 - pid.cpp
 */
 struct pidControl {
 
