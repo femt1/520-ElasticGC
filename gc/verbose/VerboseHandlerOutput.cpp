@@ -268,7 +268,7 @@ MM_VerboseHandlerOutput::handleInitialized(J9HookInterface** hook, uintptr_t eve
         writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
 	writer->formatAndOutput(env, 1, "<attribute name =\"GC Interval\" value=\"%d\" />", _extensions->elasticGC.gcInterval); 
 	//PID controller
-	writer->formatAndOutput(env,1,"<attribute name=\"ProportionalT\" value=\"%lf\" />", _extensions->controller.proportionalT);
+/*	wrier->formatAndOutput(env,1,"<attribute name=\"ProportionalT\" value=\"%lf\" />", _extensions->controller.proportionalT);
 	writer->formatAndOutput(env,1,"<attribute name=\"ProportionalI\" value=\"%lf\" />", _extensions->controller.proportionalI);
 	writer->formatAndOutput(env,1,"<attribute name=\"ProportionalH\" value=\"%lf\" />", _extensions->controller.proportionalH);
 	writer->formatAndOutput(env,1,"<attribute name=\"IntegralT\" value=\"%lf\" />", _extensions->controller.integralT);
@@ -277,14 +277,15 @@ MM_VerboseHandlerOutput::handleInitialized(J9HookInterface** hook, uintptr_t eve
 	writer->formatAndOutput(env,1,"<attribute name=\"DerivativeT\" value=\"%lf\" />", _extensions->controller.derivativeT);
 	writer->formatAndOutput(env,1,"<attribute name=\"DerivativeI\" value=\"%lf\" />", _extensions->controller.derivativeI);
 	writer->formatAndOutput(env,1,"<attribute name=\"DerivativeH\" value=\"%lf\" />", _extensions->controller.derivativeH);
-	writer->formatAndOutput(env,1,"<attribute name=\"Target GC Util Change\" value =\"%lf\" />", _extensions->controller.targetGCUtilChange);
-	writer->formatAndOutput(env,1, "<attribute name=\"Current GC Util Change\" value=\"%lf\"/>", _extensions->controller.currentGCUtilChange);
-	writer->formatAndOutput(env,1,"<attribute name=\"Current Error\" value=\"%lf\" />", _extensions->controller.currentError);
-	writer->formatAndOutput(env,1,"<attribute name=\"Loop Time for DT\" value=\"%lf\" />", _extensions->controller.loopTimeDT);
-	writer->formatAndOutput(env,1,"<attribute name=\"Output H\" value=\"%llu\"/>", _extensions->controller.outputH);
-	writer->formatAndOutput(env,1,"<attribute name=\"Output I\" value=\"%d\"/>", _extensions->controller.outputI);
-	writer->formatAndOutput(env,1,"<attribute name=\"Output T\" value=\"%llu\"/>", _extensions->controller.outputT);
+*/	writer->formatAndOutput(env,1,"<attribute name=\"Target GC Util Change\" value =\"%lf\" />", _extensions->lqr.gcUtilTarget);
+	writer->formatAndOutput(env,1, "<attribute name=\"Current GC Util Change\" value=\"%lf\"/>", _extensions->lqr.gcUtilCurr);
+	writer->formatAndOutput(env,1,"<attribute name=\"Current Error\" value=\"%lf\" />", _extensions->lqr.currentError);
+//	writer->formatAndOutput(env,1,"<attribute name=\"Loop Time for DT\" value=\"%lf\" />", _extensions->controller.loopTimeDT);
+	writer->formatAndOutput(env,1,"<attribute name=\"Output H\" value=\"%llu\"/>", _extensions->lqr.outputH);
+	writer->formatAndOutput(env,1,"<attribute name=\"Output I\" value=\"%d\"/>", _extensions->lqr.outputI);
+	writer->formatAndOutput(env,1,"<attribute name=\"Output T\" value=\"%llu\"/>", _extensions->lqr.outputT);
 	}
+	   writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
 	writer->formatAndOutput(env,1,"<attribute name=\"GC Util currently\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
 	writer->formatAndOutput(env,1,"<attribute name=\"CPU Util currently\" value=\"%lld\" />", _extensions->monitorGC.cpuUtilCurr);
 	
@@ -305,8 +306,8 @@ MM_VerboseHandlerOutput::handleInitialized(J9HookInterface** hook, uintptr_t eve
 
 
 //set up for elastic GC / control theory
-_extensions->controller.maxHeap = event->maxHeapSize;
-_extensions->controller.minHeap = event->initialHeapSize;
+_extensions->lqr.maxHeap = event->maxHeapSize;
+_extensions->lqr.minHeap = event->initialHeapSize;
 
 
 #if defined(OMR_GC_COMPRESSED_POINTERS)
@@ -443,7 +444,21 @@ MM_VerboseHandlerOutput::handleCycleContinue(J9HookInterface** hook, uintptr_t e
          writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
         writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
         writer->formatAndOutput(env, 1, "<attribute name =\"GC Interval\" value=\"%d\" />", _extensions->elasticGC.gcInterval);
-        //PID controller
+ writer->formatAndOutput(env,1,"<attribute name=\"Target GC Util Change\" value =\"%lf\" />", _extensions->lqr.gcUtilTarget);
+        writer->formatAndOutput(env,1, "<attribute name=\"Current GC Util Change\" value=\"%lf\"/>", _extensions->lqr.gcUtilCurr);
+        writer->formatAndOutput(env,1,"<attribute name=\"Current Error\" value=\"%lf\" />", _extensions->lqr.currentError);
+//      writer->formatAndOutput(env,1,"<attribute name=\"Loop Time for DT\" value=\"%lf\" />", _extensions->controller.loopTimeDT);
+        writer->formatAndOutput(env,1,"<attribute name=\"Output H\" value=\"%llu\"/>", _extensions->lqr.outputH);
+        writer->formatAndOutput(env,1,"<attribute name=\"Output I\" value=\"%d\"/>", _extensions->lqr.outputI);
+        writer->formatAndOutput(env,1,"<attribute name=\"Output T\" value=\"%llu\"/>", _extensions->lqr.outputT);
+        }
+           writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
+        writer->formatAndOutput(env,1,"<attribute name=\"GC Util currently\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
+        writer->formatAndOutput(env,1,"<attribute name=\"CPU Util currently\" value=\"%lld\" />", _extensions->monitorGC.cpuUtilCurr);
+ 
+
+
+/*       //PID controller
         writer->formatAndOutput(env,1,"<attribute name=\"ProportionalT\" value=\"%lf\" />", _extensions->controller.proportionalT);
         writer->formatAndOutput(env,1,"<attribute name=\"ProportionalI\" value=\"%lf\" />", _extensions->controller.proportionalI);
         writer->formatAndOutput(env,1,"<attribute name=\"ProportionalH\" value=\"%lf\" />", _extensions->controller.proportionalH);
@@ -465,7 +480,7 @@ MM_VerboseHandlerOutput::handleCycleContinue(J9HookInterface** hook, uintptr_t e
         }
         writer->formatAndOutput(env,1,"<attribute name=\"GC Util currently\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
         writer->formatAndOutput(env,1,"<attribute name=\"CPU Util currently\" value=\"%lld\" />", _extensions->monitorGC.cpuUtilCurr);
-
+*/
 	writer->flush(env);
 	exitAtomicReportingBlock();
 }
@@ -499,7 +514,7 @@ MM_VerboseHandlerOutput::handleCycleEnd(J9HookInterface** hook, uintptr_t eventN
          writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
         writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
         writer->formatAndOutput(env, 1, "<attribute name =\"GC Interval\" value=\"%d\" />", _extensions->elasticGC.gcInterval);
-        //PID controller
+/*        //PID controller
         writer->formatAndOutput(env,1,"<attribute name=\"ProportionalT\" value=\"%lf\" />", _extensions->controller.proportionalT);
         writer->formatAndOutput(env,1,"<attribute name=\"ProportionalI\" value=\"%lf\" />", _extensions->controller.proportionalI);
         writer->formatAndOutput(env,1,"<attribute name=\"ProportionalH\" value=\"%lf\" />", _extensions->controller.proportionalH);
@@ -518,6 +533,19 @@ MM_VerboseHandlerOutput::handleCycleEnd(J9HookInterface** hook, uintptr_t eventN
  writer->formatAndOutput(env,1,"<attribute name=\"Target GC Util Change\" value =\"%lf\" />", _extensions->controller.targetGCUtilChange);
      writer->formatAndOutput(env,1, "<attribute name=\"Current GC Util Change\" value=\"%lf\"/>", _extensions->controller.currentGCUtilChange);
         }
+        writer->formatAndOutput(env,1,"<attribute name=\"GC Util currently\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
+        writer->formatAndOutput(env,1,"<attribute name=\"CPU Util currently\" value=\"%lld\" />", _extensions->monitorGC.cpuUtilCurr);
+*/
+
+ writer->formatAndOutput(env,1,"<attribute name=\"Target GC Util Change\" value =\"%lf\" />", _extensions->lqr.gcUtilTarget);
+        writer->formatAndOutput(env,1, "<attribute name=\"Current GC Util Change\" value=\"%lf\"/>", _extensions->lqr.gcUtilCurr);
+        writer->formatAndOutput(env,1,"<attribute name=\"Current Error\" value=\"%lf\" />", _extensions->lqr.currentError);
+//      writer->formatAndOutput(env,1,"<attribute name=\"Loop Time for DT\" value=\"%lf\" />", _extensions->controller.loopTimeDT);
+        writer->formatAndOutput(env,1,"<attribute name=\"Output H\" value=\"%llu\"/>", _extensions->lqr.outputH);
+        writer->formatAndOutput(env,1,"<attribute name=\"Output I\" value=\"%d\"/>", _extensions->lqr.outputI);
+        writer->formatAndOutput(env,1,"<attribute name=\"Output T\" value=\"%llu\"/>", _extensions->lqr.outputT);
+        }
+           writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
         writer->formatAndOutput(env,1,"<attribute name=\"GC Util currently\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
         writer->formatAndOutput(env,1,"<attribute name=\"CPU Util currently\" value=\"%lld\" />", _extensions->monitorGC.cpuUtilCurr);
 
