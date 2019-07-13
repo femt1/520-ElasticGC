@@ -216,69 +216,52 @@ struct gcElastic {
 	
 };
 
-
-
 /*
-* Struct holding PID controller information for elastic GC
-* Based on https://gist.github.com/bradley219/5373998 - pid.cpp
+Struct for lQR 
 */
-struct pidControl {
+struct LQR {
 
-	//reference point - target point 
-	//this is calculated during runtime so it can be dynamic
-	double targetGCUtilChange;
+	//k value
+	double k1;
+	double k2;
+	double k3;
+	//second row
+	double k4;
+	double k5;
+	double k6;
 	
-	//temporary variable to hold present value
-	//just for easy debugging purposes
-	double currentGCUtilChange;
+	//third row
+	double k7;
+	double k8;
+	double k9;
 
-	//variable to represent error and
-	//previous error
-	double currentError;
-	double prevError;
+	//double integralSum;
+	double threadINIT;
+	double heapINIT;
+	double intervalINIT;
 
-	//proportional variables (P in PID controller)
-	//changed to float becuase of 0.6 intiil value 
-	double proportionalConstantH;
-	double proportionalConstantI;
-	double proportionalConstantT;
-	double proportionalH;
-	double proportionalT;
-	double proportionalI;
-	//integral variables (I in PID controller)
-	double integralConstantH;
-	double integralConstantT;
-	double integralConstantI;
-	double integralSum; //sum up integral
-	//int64_t integralSumI;
-	//uintptr_t integralSumT;
-	double integralH; //final value
-	double integralI;
-	double integralT;
-
-	//derivative variables (D in PID controller)
-	double  derivativeConstantH;
-	double  derivativeConstantI;
-	double derivativeConstantT;
-	double derivativeH; //final value
-	double derivativeI;
-	double derivativeT;
-	//only need one 
-	double  derivativeTempH;//temporary calculation value
-	//int64_t derivativeTempI;
-	//uintptr_t derivativeTempT;
-	//loop variables - dt in PID controller theory
-	double loopTimeDT;
 	double slidingWindow; //set to 5 usually
+	//reference point - target point 
+        //this is calculated during runtime so it can be dynamic
+        double gcUtilTarget;
+
+        //temporary variable to hold present value
+        //just for easy debugging purposes
+        double gcUtilCurr;
+
+        //variable to represent error and
+        //previous error
+        double currentError;
+        double prevError;
+
 	//output variables for each heap,thread and interval
-	uintptr_t outputH;
-	int64_t outputI;
-	uintptr_t outputT;
+        uintptr_t outputH;
+        int64_t outputI;
+        uintptr_t outputT;
 
-	//max heap and min heap variables
-	uintptr_t maxHeap;
-	uintptr_t minHeap;
-
+	  //max heap and min heap variables
+        uintptr_t maxHeap;
+        uintptr_t minHeap;
 };
 /* Struct responsible for monitoring GC to help with measuring impacts of
 * elastic GC mode (still need a new name)
