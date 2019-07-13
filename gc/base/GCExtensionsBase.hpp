@@ -211,7 +211,7 @@ public:
 	gcMonitoring monitorGC;
 	gcElastic elasticGC; //elasticGC mode
 	J9SysinfoCPUTime sysinfoCPUTime;
-	pidControl controller; //for PID controller logic
+	LQR lqr;
 
 
 	MM_CollectorLanguageInterface* collectorLanguageInterface;
