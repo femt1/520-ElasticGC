@@ -256,7 +256,10 @@ excludeLocalGc(J9JavaVM *javaVM)
 				
 		if(gcExtensions->elasticGC.gcUtilCurr > gcExtensions->elasticGC.gcUtilRangeMax)
 			{
+				if(extensions->gcInterval < 4000)
+				{
 				extensions->gcInterval = extensions->gcInterval + 100;
+				}
 				gcExtensions->elasticGC.gcInterval = extensions->gcInterval;	
 			if((extensions->globalGcCount + extensions ->localGcCount) % extensions->gcInterval > 3)
 				{
@@ -265,7 +268,10 @@ excludeLocalGc(J9JavaVM *javaVM)
 			}
 		else if(gcExtensions->elasticGC.gcUtilCurr < gcExtensions->elasticGC.gcUtilRangeMin)
 		{
+			if(extensions->gcInterval > 200)
+			{
 			extensions->gcInterval = extensions->gcInterval - 100;
+			}
 			gcExtensions->elasticGC.gcInterval = extensions->gcInterval;
 		}
 		}
