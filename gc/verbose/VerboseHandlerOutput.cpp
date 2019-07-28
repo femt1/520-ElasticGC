@@ -265,7 +265,7 @@ MM_VerboseHandlerOutput::handleInitialized(J9HookInterface** hook, uintptr_t eve
 	writer->formatAndOutput(env,1, "<attribute name= \"numThreadsSpecified\" value=\"%d\" />", _extensions->elasticGC.numThreads);
 	 writer->formatAndOutput(env, 1, "<attribute name=\"heapSize specified\" value=\"%lld\" />", _extensions->elasticGC.heapSize);
 	 writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
-        writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
+        //writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
 	writer->formatAndOutput(env, 1, "<attribute name =\"GC Interval\" value=\"%d\" />", _extensions->elasticGC.gcInterval); 
 	//PID controller
 	writer->formatAndOutput(env,1,"<attribute name=\"ProportionalT\" value=\"%lf\" />", _extensions->controller.proportionalT);
@@ -287,7 +287,7 @@ MM_VerboseHandlerOutput::handleInitialized(J9HookInterface** hook, uintptr_t eve
 	}
 	writer->formatAndOutput(env,1,"<attribute name=\"GC Util currently\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
 	writer->formatAndOutput(env,1,"<attribute name=\"CPU Util currently\" value=\"%lld\" />", _extensions->monitorGC.cpuUtilCurr);
-	
+ writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
 #if defined(OMR_GC_CONCURRENT_SCAVENGER)
 	if (_extensions->isConcurrentScavengerEnabled()) {
 		writer->formatAndOutput(env, 1, "<attribute name=\"concurrentScavenger\" value=\"%s\" />",
@@ -441,7 +441,7 @@ MM_VerboseHandlerOutput::handleCycleContinue(J9HookInterface** hook, uintptr_t e
         writer->formatAndOutput(env,1, "<attribute name= \"numThreadsSpecified\" value=\"%d\" />", _extensions->elasticGC.numThreads);
          writer->formatAndOutput(env, 1, "<attribute name=\"heapSize specified\" value=\"%lld\" />", _extensions->elasticGC.heapSize);
          writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
-        writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
+        //writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
         writer->formatAndOutput(env, 1, "<attribute name =\"GC Interval\" value=\"%d\" />", _extensions->elasticGC.gcInterval);
         //PID controller
         writer->formatAndOutput(env,1,"<attribute name=\"ProportionalT\" value=\"%lf\" />", _extensions->controller.proportionalT);
@@ -465,7 +465,7 @@ MM_VerboseHandlerOutput::handleCycleContinue(J9HookInterface** hook, uintptr_t e
         }
         writer->formatAndOutput(env,1,"<attribute name=\"GC Util currently\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
         writer->formatAndOutput(env,1,"<attribute name=\"CPU Util currently\" value=\"%lld\" />", _extensions->monitorGC.cpuUtilCurr);
-
+ writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
 	writer->flush(env);
 	exitAtomicReportingBlock();
 }
@@ -496,8 +496,8 @@ MM_VerboseHandlerOutput::handleCycleEnd(J9HookInterface** hook, uintptr_t eventN
         writer->formatAndOutput(env, 1, "<attribute name=\"elasticGC enabled\" value=\"%d\" />", _extensions->elasticGC.elasticEnabled);
         writer->formatAndOutput(env,1, "<attribute name= \"numThreadsSpecified\" value=\"%d\" />", _extensions->elasticGC.numThreads);
          writer->formatAndOutput(env, 1, "<attribute name=\"heapSize specified\" value=\"%d\" />", _extensions->elasticGC.heapSize);
-         writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
-        writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
+         writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);//
+        //writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
         writer->formatAndOutput(env, 1, "<attribute name =\"GC Interval\" value=\"%d\" />", _extensions->elasticGC.gcInterval);
         //PID controller
         writer->formatAndOutput(env,1,"<attribute name=\"ProportionalT\" value=\"%lf\" />", _extensions->controller.proportionalT);
@@ -520,7 +520,7 @@ MM_VerboseHandlerOutput::handleCycleEnd(J9HookInterface** hook, uintptr_t eventN
         }
         writer->formatAndOutput(env,1,"<attribute name=\"GC Util currently\" value=\"%lld\" />", _extensions->monitorGC.gcUtilCurr);
         writer->formatAndOutput(env,1,"<attribute name=\"CPU Util currently\" value=\"%lld\" />", _extensions->monitorGC.cpuUtilCurr);
-
+ writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->monitorGC.currentTimeRunning);
 	writer->flush(env);
 	exitAtomicReportingBlock();
 }
