@@ -265,12 +265,14 @@ MM_VerboseHandlerOutput::handleInitialized(J9HookInterface** hook, uintptr_t eve
 	writer->formatAndOutput(env,1, "<attribute name= \"numThreadsSpecified\" value=\"%d\" />", _extensions->elasticGC.numThreads);
 	 writer->formatAndOutput(env, 1, "<attribute name=\"heapSize specified\" value=\"%d\" />", _extensions->elasticGC.heapSize);
         writer->formatAndOutput(env,1, "<attribute name= \"numCores\" value=\"%d\" />", _extensions->elasticGC.numCores);
-	 writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->elasticGC.gcUtilCurr);
-        writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->elasticGC.currentTimeRunning);
+	 //writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->elasticGC.gcUtilCurr);
+        //writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->elasticGC.currentTimeRunning);
 	writer->formatAndOutput(env, 1, "<attribute name =\"GC Interval\" value=\"%d\" />", _extensions->elasticGC.gcInterval); 
 	 writer->formatAndOutput(env, 1, "<attribute name=\"GC Util Range Max\" value=\"%d\" />", _extensions->elasticGC.gcUtilRangeMax);
 //        writer->formatAndOutput(env,1, "<attribute name= \"GC Policy\" value=\"%d\" />", _extensions->_gcPolicy);
 	}
+	writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->elasticGC.gcUtilCurr);
+        writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->elasticGC.currentTimeRunning);
 #if defined(OMR_GC_CONCURRENT_SCAVENGER)
 	if (_extensions->isConcurrentScavengerEnabled()) {
 		writer->formatAndOutput(env, 1, "<attribute name=\"concurrentScavenger\" value=\"%s\" />",
@@ -417,13 +419,15 @@ MM_VerboseHandlerOutput::handleCycleContinue(J9HookInterface** hook, uintptr_t e
         writer->formatAndOutput(env,1, "<attribute name= \"numThreadsSpecified\" value=\"%d\" />", _extensions->elasticGC.numThreads);
          writer->formatAndOutput(env, 1, "<attribute name=\"heapSize specified\" value=\"%d\" />", _extensions->elasticGC.heapSize);
         writer->formatAndOutput(env,1, "<attribute name= \"numCores\" value=\"%lld\" />", _extensions->elasticGC.numCores);
-         writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->elasticGC.gcUtilCurr);
-        writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->elasticGC.currentTimeRunning);
+        // writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->elasticGC.gcUtilCurr);
+        //writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->elasticGC.currentTimeRunning);
 	writer->formatAndOutput(env, 1, "<attribute name =\"Control flow\" value=\"%d\" />", _extensions->elasticGC.controlFlow);
         writer->formatAndOutput(env, 1, "<attribute name =\"GC Interval\" value=\"%d\" />", _extensions->elasticGC.gcInterval);
          writer->formatAndOutput(env, 1, "<attribute name=\"GC Util Range Max\" value=\"%lld\" />", _extensions->elasticGC.gcUtilRangeMax);
   //      writer->formatAndOutput(env,1, "<attribute name= \"GC Policy\" value=\"%d\" />", _extensions->_gcPolicy);
 	}
+writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->elasticGC.gcUtilCurr);
+        writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->elasticGC.currentTimeRunning);
 	writer->flush(env);
 	exitAtomicReportingBlock();
 }
@@ -454,15 +458,16 @@ MM_VerboseHandlerOutput::handleCycleEnd(J9HookInterface** hook, uintptr_t eventN
         writer->formatAndOutput(env,1, "<attribute name= \"numThreadsSpecified\" value=\"%d\" />", _extensions->elasticGC.numThreads);
          writer->formatAndOutput(env, 1, "<attribute name=\"heapSize specified\" value=\"%d\" />", _extensions->elasticGC.heapSize);
         writer->formatAndOutput(env,1, "<attribute name= \"numCores\" value=\"%lld\" />", _extensions->elasticGC.numCores);
-         writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->elasticGC.gcUtilCurr);
-        writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->elasticGC.currentTimeRunning);
+         //writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->elasticGC.gcUtilCurr);
+       // writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->elasticGC.currentTimeRunning);
         writer->formatAndOutput(env, 1, "<attribute name =\"GC Interval\" value=\"%d\" />", _extensions->elasticGC.gcInterval);
 		writer->formatAndOutput(env, 1, "<attribute name =\"Control flow\" value=\"%d\" />", _extensions->elasticGC.controlFlow);
 writer->formatAndOutput(env, 1, "<attribute name=\"GC Util Range Max\" value=\"%lld\" />", _extensions->elasticGC.gcUtilRangeMax);
     //    writer->formatAndOutput(env,1, "<attribute name= \"GC Policy\" value=\"%d\" />", _extensions->_gcPolicy);
 	}
 
-
+writer->formatAndOutput(env, 1, "<attribute name=\"Current GC Util\" value=\"%lld\" />", _extensions->elasticGC.gcUtilCurr);
+        writer->formatAndOutput(env,1, "<attribute name= \"Current Time Running\" value=\"%lld\" />", _extensions->elasticGC.currentTimeRunning);
 	writer->flush(env);
 	exitAtomicReportingBlock();
 }

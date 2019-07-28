@@ -579,8 +579,12 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 				else if(_extensions->elasticGC.gcUtilCurr < _extensions->elasticGC.gcUtilRangeMin)
 				{
 					//need to adjust threaads i.e increase
-			
-                                                _extensions->elasticGC.numThreads += 1;
+						if(_extensions->elasticGC.numThreads < _extensions->elasticGC.numCores)
+						{
+                                               		 _extensions->elasticGC.numThreads += 1;
+
+						}
+						//else do nothing 
                                                 _extensions->gcThreadCount = _extensions->elasticGC.numThreads;
                                                 return _extensions->elasticGC.numThreads;
                                 }
